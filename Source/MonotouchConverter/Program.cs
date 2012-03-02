@@ -5,8 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using MonotouchConverter.Properties;
-using log4net;
-using log4net.Config;
 
 namespace MonotouchConverter
 {
@@ -18,11 +16,9 @@ namespace MonotouchConverter
         private const string ProjectGuidElement = "ProjectGuid";
         private const string ProjectTypeGuidsElement = "ProjectTypeGuids";
         private static readonly Settings _settings = Settings.Default;
-        private static ILog _log;
 
         private static void ConvertToMonoTouch()
         {
-            _log = LogManager.GetLogger(typeof (Program));
             Parallel.ForEach(GetProjectFiles(), DoConvertToMonotouch);
         }
 
@@ -35,20 +31,20 @@ namespace MonotouchConverter
                 .SingleOrDefault(x => x.Name == xNamespace + ProjectTypeGuidsElement);
             if (projectTypeElement != null)
             {
-                _log.WarnFormat("File: {0} already in Monotouch format", projectcFilePath);
+                Console.WriteLine("<WARN> File: {0} already in Monotouch format", projectcFilePath);
                 return;
             }
             XElement projectGuid = descendants.Single(x => x.Name == xNamespace + ProjectGuidElement);
             projectGuid.AddAfterSelf(new XElement(xNamespace + ProjectTypeGuidsElement, MonotouchProjectType));
             project.Save(projectcFilePath);
-            _log.InfoFormat("File: {0} has been converted to Monotouch format", projectcFilePath);
+            Console.WriteLine("File: {0} has been converted to Monotouch format", projectcFilePath);
         }
 
         private static IEnumerable<string> GetProjectFiles()
         {
             if (!Directory.Exists(_settings.SourcePath))
             {
-                _log.ErrorFormat("Directory is absent: {0}", _settings.SourcePath);
+                Console.WriteLine("<ERROR> Directory is absent: {0}", _settings.SourcePath);
                 return new List<string>();
             }
             return Directory.EnumerateFiles(_settings.SourcePath, "*.csproj", SearchOption.AllDirectories);
@@ -56,11 +52,9 @@ namespace MonotouchConverter
 
         private static void Main(string[] args)
         {
-            XmlConfigurator.Configure();
-            _log = LogManager.GetLogger(typeof (Program));
-            _log.Info("MonotouchConverter is running. Press <Esc> or <Enter> to stop.");
-            _log.DebugFormat("Press M for convert to MonoTouch");
-            _log.DebugFormat("Press V for convert to VisualStudio");
+            Console.WriteLine("MonotouchConverter is running. Press <Esc> or <Enter> to stop.");
+            Console.WriteLine("Press M for convert to MonoTouch");
+            Console.WriteLine("Press V for convert to VisualStudio");
             Console.Write(Environment.NewLine);
             while (ProcessSpecialKey(Console.ReadKey()))
             {
